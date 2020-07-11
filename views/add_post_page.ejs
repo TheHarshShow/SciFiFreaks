@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <%- include("partials/stylesheets.ejs") %>
+    <title></title>
+  </head>
+  <body>
+
+    <%- include("partials/navbar.ejs") %>
+
+    <div class="container">
+
+      <div class="row mb-4" style="display:flex; flex-wrap; wrap">
+
+        <div class="col-md-3 col-sm-6 box mb-2" style="height:300px">
+          <div class="inner border border-info" style="height:100%;padding:0px">
+            <form class="" action="/post_piece" method="get" style="height:100%;width:100%;border-radius:0px;">
+              <button class="btn btn-info" type="submit" style="height:100%;width:100%;border-radius:0px;font-weight:bold">Enter into Diary</button>
+            </form>
+          </div>
+        </div>
+
+            <div class="col-md-3 col-sm-6 box mb-2" style="height:300px">
+              <div class="inner border border-primary" style="height:100%;padding:0px">
+
+                <form class="" action="/post_movie" method="get" style="height:100%;width:100%;border-radius:0px">
+                  <button class="btn btn-primary" type="submit" style="height:100%;width:100%;border-radius:0px;font-weight:bold">Post Movie</button>
+                </form>
+
+              </div>
+            </div>
+            <div class="col-md-3 col-sm-6 box mb-2" style="height:300px">
+              <div class="inner border border-danger" style="height:100%;padding:0px">
+                <form class="" action="/post_tv_show" method="get" style="height:100%;width:100%;border-radius:0px">
+                  <button class="btn btn-danger" type="submit" style="height:100%;width:100%;border-radius:0px;font-weight:bold">Post TV Show</button>
+                </form>
+
+              </div>
+
+            </div>
+            <div class="col-md-3 col-sm-6 box mb-2" style="height:300px">
+              <div class="inner border border-success" style="height:100%;padding:0px">
+
+                <form class="" action="/post_book" method="get" style="height:100%;width:100%;border-radius:0px">
+                  <button class="btn btn-success" type="submit" style="height:100%;width:100%;border-radius:0px;font-weight:bold">Post Book</button>
+                </form>
+              </div>
+            </div>
+
+
+
+      </div>
+
+    </div>
+
+    <%- include("partials/scripts.ejs") %>
+
+  </body>
+</html>

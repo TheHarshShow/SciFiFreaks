@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+
+    <%- include("partials/stylesheets.ejs") %>
+
+    <title>Add Movie</title>
+  </head>
+  <body>
+
+    <%- include("partials/navbar.ejs") %>
+
+
+    <div class="container" style="margin: 25px auto">
+
+      <h1 style="text-align:center">New Movie!</h1>
+
+      <div style="width:30%; margin: 25px auto">
+        <form action="/post_movie" method="post" autocomplete="off">
+          <div class="form-group">
+            <input class="form-control"type="text" name="movieName" placeholder="Movie Name" required>
+          </div>
+          <div class="form-group">
+            <input type="number" name="year" class="form-control" id="year" placeholder="Year" required></input>
+          </div>
+          <div class="form-group">
+            <textarea name="description" class="form-control" id="description" placeholder="Description..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <input type="text" name="imageUrl" class="form-control" id="imageUrl" placeholder="Image Url" required></input>
+          </div>
+
+          <div class="form-group">
+            <input class="btn btn-primary btn-default btn-block" type="submit">
+          </div>
+        </form>
+
+      </div>
+
+
+    </div>
+
+    <%- include("partials/scripts.ejs") %>
+
+  </body>
+</html>

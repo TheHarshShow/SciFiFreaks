@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+  </head>
+  <body>
+
+    <% if (messages.error) {%>
+      <%= messages.error %>
+    <% } %>
+
+    <h1>login</h1>
+    <form class="" action="/login" method="post" autocomplete="off">
+      <div>
+        <label for="name">Name</label>
+        <input type="text" name="name" id="name" autocomplete="off" required>
+      </div>
+      <div>
+        <label for="password">Password</label>
+        <input type="password" name="password" id="password" autocomplete="off"required>
+      </div>
+      <button type="submit" name="button">Login</button>
+    </form>
+
+    <a href="/register">register page</a>
+
+  </body>
+</html>

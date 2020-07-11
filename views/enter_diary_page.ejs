@@ -1,0 +1,11 @@
+<%- include("partials/top_partial.ejs") %>
+
+<textarea name="content" rows="8" cols="80"></textarea>
+
+<script src="ckeditor/ckeditor.js">
+</script>
+<script type="text/javascript">
+  CKEDITOR.replace('content');
+</script>
+
+<%- include("partials/bottom_partial.ejs") %>
