@@ -9,9 +9,11 @@ const session = require('express-session')
 //Register
 router.post('/register', async (req, res) => {
   //VALIDATE
+  console.log('Register')
+  console.log('Register ' + req.body.name)
+
   const { error } = registerValidation(req.body);
 
-  console.log('Register ' + req.body)
 
   if(error != null){
     return res.send(error.details[0].message);

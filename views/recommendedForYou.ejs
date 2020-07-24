@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
   <head>
+    <meta charset="utf-8">
     <%- include("partials/stylesheets.ejs") %>
-    <title></title>
+
+    <title>Recommended For You</title>
   </head>
   <body>
-
     <%- include("partials/navbar.ejs") %>
-
 
     <div class="jumbotron-fluid" style="background-image:url(/images/empty_space.png); border-radius:0; padding: 30px;">
       <div class="container">
@@ -24,7 +24,11 @@
 
     <% if (f){ %>
       <div class="text-center">
-        <h1 class="display-4">Hi <%= name %>!</h1>
+        <% if (movies.length > 0) { %>
+        <h1 class="display-4">Recommended for You!</h1>
+        <% } else { %>
+        <h1>No Recommendations Available</h1>
+        <% } %>
       </div>
     <% } %>
 
@@ -43,10 +47,6 @@
           <% }) %>
 
       </div>
-
-    </div>
-
-
 
     <%- include("partials/scripts.ejs") %>
 

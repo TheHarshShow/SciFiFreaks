@@ -81,23 +81,39 @@
             <div class="jumbotron" style="padding-top:10px;padding-bottom:10px;background-color:#58D68D;padding-right:10px">
               <div class="row">
                 <div class="col-10">
-                  <h4><%= comment.user %></h4>
-                  <p><%= comment.comment %></p>
+                  <h4><%= comment.commenn.user %></h4>
+                  <p><%= comment.commenn.comment %></p>
                 </div>
                 <div class="col-2">
-                  <button class="btn btn-outline-dark" data-toggle="collapse" data-target="#a<%= comment._id %>" name="<%= comment._id %>" style="width:100%;height:100%">Reply</button>
+                  <div class="row">
+                    <button class="btn btn-primary" data-toggle="collapse" data-target="#b<%= comment.commenn._id %>" name="b<%= comment.commenn._id %>" style="padding-left:2px;padding-right:2px;width:100%;height:100%;margin-bottom:10px;margin-right:10px">Replies</button>
+                  </div>
+                  <div class="row">
+                    <button class="btn btn-outline-dark" data-toggle="collapse" data-target="#a<%= comment.commenn._id %>" name="a<%= comment.commenn._id %>" style="padding-left:2px;padding-right:2px;width:100%;height:100%;margin-right:10px">Reply</button>
+                  </div>
                 </div>
               </div>
               <!-- <button class="btn btn-outline-dark" name="button">Like</button> -->
             </div>
-            <div class="jumbotron collapse" style="padding-top:10px;padding-bottom:10px;background-color:#566573;" id="a<%= comment._id %>">
-            <form action="/post_comment_on_movie_comment/<%= comment._id %>" method="post">
+            <div class="jumbotron collapse" style="padding-top:10px;padding-bottom:10px;background-color:#566573;" id="a<%= comment.commenn._id %>">
+            <form action="/post_comment_on_movie_comment/<%= comment.commenn._id %>" method="post">
               <div class="row" style="margin-top:0px">
-                <input class="col-10 form-control" type="text" name="" value="" style="margin-right:10px" required>
-                <button type="submit" class="col-1 btn btn-dark" name="button">POST</button>
+                <input class="col-12 form-control" type="text" name="comment" value="" style="margin-right:10px;margin-bottom:5px" required>
+                <button type="submit" class="col-12 btn btn-dark" name="button" style="white-space: normal;word-wrap: break-word; ">POST</button>
               </div>
             </form>
           </div>
+            <ul>
+              <div class="jumbotron collapse" style="padding-top:10px;padding-bottom:10px;background-color:#F9E79F;" id="b<%= comment.commenn._id %>">
+              <% comment.replies.forEach(function(reply){ %>
+                <li>
+                  <h6><%= reply.user %></h6>
+                  <p><%= reply.comment %></p>
+                </li>
+                <hr>
+              <% }) %>
+              </div>
+            </ul>
           </li>
         <% }) %>
       </ul>

@@ -2,13 +2,139 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
+
+
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+
+    <style media="screen">
+    body {
+    font-family: "Lato", sans-serif;
+}
+
+
+
+.main-head{
+    height: 150px;
+    background: #FFF;
+
+}
+
+.sidenav {
+    height: 100%;
+    background-color: #000;
+    overflow-x: hidden;
+    padding-top: 20px;
+}
+
+
+.main {
+    padding: 0px 10px;
+}
+
+@media screen and (max-height: 450px) {
+    .sidenav {padding-top: 15px;}
+}
+
+@media screen and (max-width: 450px) {
+    .login-form{
+        margin-top: 10%;
+    }
+
+    .register-form{
+        margin-top: 10%;
+    }
+}
+
+@media screen and (min-width: 768px){
+    .main{
+        margin-left: 40%;
+    }
+
+    .sidenav{
+        width: 40%;
+        position: fixed;
+        z-index: 1;
+        top: 0;
+        left: 0;
+    }
+
+    .login-form{
+        margin-top: 80%;
+    }
+
+    .register-form{
+        margin-top: 20%;
+    }
+}
+
+
+.login-main-text{
+    margin-top: 20%;
+    padding: 60px;
+    color: #fff;
+}
+
+.login-main-text h2{
+    font-weight: 300;
+}
+
+.btn-black{
+    background-color: #000 !important;
+    color: #fff;
+}
+
+    </style>
+
+
+    <title></title>
+  </head>
+  <body>
+<div class="sidenav">
+         <div class="login-main-text">
+            <h2>SciFiFreaks<br> Login Page</h2>
+            <p>Anything and everything SciFi</p>
+         </div>
+      </div>
+      <div class="main">
+         <div class="col-md-6 col-sm-12">
+
+            <div class="login-form">
+              <% if (messages.error) {%>
+                <%= messages.error %>
+              <% } %>
+               <form class="" action="/login" method="post" autocomplete="off">
+                  <div class="form-group">
+                      <strong><label>Username</label></strong>
+                     <input type="text" class="form-control" name="name" id="name" autocomplete="off" placeholder="Username" required>
+                  </div>
+                  <div class="form-group">
+                     <strong> <label>Password</label></strong> 
+                     <input type="password" class="form-control" name="password" id="password" placeholder="Password" autocomplete="off"required>
+                  </div>
+                  <button type="submit" class="btn btn-black">Login</button>
+                  <a class="btn btn-secondary" href="/register">Register</a>
+
+               </form>
+
+            </div>
+         </div>
+      </div>
+
+  </body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
     <title></title>
   </head>
   <body>
 
-    <% if (messages.error) {%>
-      <%= messages.error %>
-    <% } %>
+
 
     <h1>login</h1>
     <form class="" action="/login" method="post" autocomplete="off">
@@ -26,4 +152,4 @@
     <a href="/register">register page</a>
 
   </body>
-</html>
+</html> -->

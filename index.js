@@ -17,6 +17,8 @@ const MovieLike = require('./Models/MovieLike')
 const MovieBookmark = require('./Models/MovieBookmark')
 const MovieComment = require('./Models/MovieComment')
 const CommentMovieComment = require('./Models/CommentMovieComment')
+const MovieRule = require('./Models/MovieRule')
+const Admin = require('./Models/Admin')
 const method_override = require('method-override');
 const path = require('path');
 
@@ -72,7 +74,7 @@ app.get('/', async (req, res) => {
 
   let mvs;
 
-  await Movie.find({}, (err, movies) => {
+  await Movie.find({}, async (err, movies) => {
 
     if(err){
       console.log("There was an error", err)
@@ -80,16 +82,16 @@ app.get('/', async (req, res) => {
       mvs=movies;
     }
 
-  })
+    if (await req.isAuthenticated()){
+      const u=await req.user;
+      console.log('movies '+mvs);
+      await res.render('index.ejs', {name: u.name, f: 1, movies: mvs});
+    } else {
+      console.log('movies '+mvs);
+      res.render('index.ejs', {f: 0, movies: mvs});
+    }
 
-  if (req.isAuthenticated()){
-    const u=await req.user;
-    console.log('movies '+mvs);
-    await res.render('index.ejs', {name: u.name, f: 1, movies: mvs});
-  } else {
-    console.log('movies '+mvs);
-    res.render('index.ejs', {f: 0, movies: mvs});
-  }
+  })
 
 })
 
@@ -190,7 +192,7 @@ app.get('/m/:movie_id', (req,res) => {
           if(result==true){
             liked=1;
           }
-          await MovieBookmark.exists({user:user._id, movie:movie._id}, await function(err, result){
+          await MovieBookmark.exists({user:user._id, movie:movie._id}, async function(err, result){
             if(err!=null){
               errFlag=1;
               return res.status(400).send('Bad Request')
@@ -199,17 +201,105 @@ app.get('/m/:movie_id', (req,res) => {
             if(result==true){
               bookmarked=1;
             }
-            MovieComment.find({movie:movie._id}).sort('-date').exec(function(err,docs){
+            MovieComment.find({movie:movie._id}).sort('-date').exec(async function(err,docs){
 
-              return res.render('moviePage.ejs', {movie: movie, f:f, imdb: imdb, RT: RT, Metascore: Metascore, liked:liked, bookmarked: bookmarked, comments: docs})
+              let iterations = docs.length;
+              let commens = [];
+
+              if(docs.length==0){
+                return res.render('moviePage.ejs', {movie: movie, f:f, imdb: imdb, RT: RT, Metascore: Metascore, liked:liked, bookmarked: bookmarked, comments: []})
+              }
+
+              for (const doc of docs){
+
+                console.log(doc.comment)
+                await CommentMovieComment.exists({parent_comment:doc._id}, async function(err, result){
+                  if(err!=null){
+                    return res.status(400).send('')
+                  }
+                  if(result==true){
+                    await CommentMovieComment.find({parent_comment:doc._id}, function(err, results){
+                      if(err!=null){
+                        return res.status(400).send('there was an error');
+                      }
+                      commen = {
+                        commenn: doc,
+                        replies: results
+                      }
+                      commens.push(commen);
+                      console.log(commen)
+                      if (!--iterations){
+                        return res.render('moviePage.ejs', {movie: movie, f:f, imdb: imdb, RT: RT, Metascore: Metascore, liked:liked, bookmarked: bookmarked, comments: commens.sort((a, b) => b.commenn.date - a.commenn.date)})
+                      }
+                    })
+                  } else {
+                    commen = {
+                      commenn: doc,
+                      replies: []
+                    }
+                    commens.push(commen);
+                    console.log(commen)
+
+                    if (!--iterations){
+                      return res.render('moviePage.ejs', {movie: movie, f:f, imdb: imdb, RT: RT, Metascore: Metascore, liked:liked, bookmarked: bookmarked, comments: commens})
+                    }
+                  }
+                })
+
+              }
+
             })
 
           })
         })
       } else {
-        MovieComment.find({movie:movie._id}).sort('-date').exec(function(err,docs){
+        MovieComment.find({movie:movie._id}).sort('-date').exec(async function(err,docs){
 
-          return res.render('moviePage.ejs', {movie: movie, f:f, imdb: imdb, RT: RT, Metascore: Metascore, liked:liked, bookmarked: bookmarked, comments: docs})
+          let iterations = docs.length;
+          let commens = [];
+
+          if(docs.length==0){
+            return res.render('moviePage.ejs', {movie: movie, f:f, imdb: imdb, RT: RT, Metascore: Metascore, liked:liked, bookmarked: bookmarked, comments: []})
+          }
+
+          for (const doc of docs){
+
+            console.log(doc.comment)
+            await CommentMovieComment.exists({parent_comment:doc._id}, async function(err, result){
+              if(err!=null){
+                return res.status(400).send('')
+              }
+              if(result==true){
+                await CommentMovieComment.find({parent_comment:doc._id}, function(err, results){
+                  if(err!=null){
+                    return res.status(400).send('there was an error');
+                  }
+                  commen = {
+                    commenn: doc,
+                    replies: results
+                  }
+                  commens.push(commen);
+                  console.log(commen)
+                  if (!--iterations){
+                    return res.render('moviePage.ejs', {movie: movie, f:f, imdb: imdb, RT: RT, Metascore: Metascore, liked:liked, bookmarked: bookmarked, comments: commens.sort((a, b) => b.commenn.date - a.commenn.date)})
+                  }
+                })
+              } else {
+                commen = {
+                  commenn: doc,
+                  replies: []
+                }
+                commens.push(commen);
+                console.log(commen)
+
+                if (!--iterations){
+                  return res.render('moviePage.ejs', {movie: movie, f:f, imdb: imdb, RT: RT, Metascore: Metascore, liked:liked, bookmarked: bookmarked, comments: commens})
+                }
+              }
+            })
+
+          }
+
         })
       }
     })
@@ -217,19 +307,73 @@ app.get('/m/:movie_id', (req,res) => {
   })
 })
 
-app.get('/post_comment_on_movie_comment/:comment_id', checkAuthenticated, async (req, res) => {
+app.get('/generate', async (req, res) => {
+
+  var mov = [];
+  var use = [];
+  Movie.find({}, async function(err, docs){
+    if(err!= null){
+      return res.status(400).send('there was an error '+err);
+    }
+    mov = docs.map(a => a._id);
+    await User.find({}, async function(err, dox){
+      if(err!=null){
+        return res.status(400).send('there was an error '+err);
+      }
+      use = dox.map(a => a._id);
+
+      var s1=mov.join('|');
+      var s2=use.join('|');
+      s1=s1+"||"+s2;
+
+      const { spawn } = require("child_process");
+      const pyProg = spawn('python', ['./generate.py', s1]);
+
+      pyProg.stdout.on('data', async function(data) {
+
+          var clusters = (data.toString().substring(0,data.toString().length-1)).split('||');
+          var t=0;
+          for (var i=0;i<clusters.length; i++){
+            clusters[i]=clusters[i].split('|');
+            t+=clusters[i].length;
+          }
+
+          console.log(t)
+          await MovieLike.deleteMany({}, async function(){
+
+            clusters.forEach(async function(cluster){
+              for(var i=1;i<cluster.length;i++){
+                let ml = new MovieLike({
+                  movie: cluster[i],
+                  user: cluster[0]
+                })
+                await ml.save();
+              }
+            })
+            res.write(data.toString());
+            res.end('');
+          })
+        });
+
+    })
+  })
+
+})
+
+app.post('/post_comment_on_movie_comment/:comment_id', checkAuthenticated, async (req, res) => {
 
   if(req.body.comment == null || req.body.comment == ""){
-    res.redirect(req.get('referer'));
+    console.log(':/')
+    return res.redirect(req.get('referer'));
   }
   let user = await req.user;
   let cmc = await new CommentMovieComment({
-    parent_comment: comment_id,
+    parent_comment: req.params.comment_id,
     comment: req.body.comment,
-    user: user._id
+    user: user.name
   })
-  let saved_comment = cmc.save();
-  console.log(saved_comment);
+  let saved_comment = await cmc.save();
+  console.log(await saved_comment);
   res.redirect(req.get('referer'));
 
 })
@@ -335,6 +479,143 @@ app.get('/printPython/:use', (req, res) => {
         res.write(data);
         res.end('end');
     });
+
+})
+
+app.get('/recommended', checkAuthenticated, async (req,res) => {
+  let user = await req.user;
+
+  MovieLike.find({user:user._id}, function(err, docs){
+
+    if(err!=null){
+      return res.status(401).send('Unknown error');
+    }
+
+    let temp = docs.map(a => a.movie);
+
+    console.log(temp);
+    var tot = docs.length;
+    var arr = [];
+    docs.forEach(function(doc){
+      MovieRule.find({movie1:doc.movie}, 'movie2', function(err,dox){
+        tot--;
+        let result = dox.map(a => a.movie2);
+        // console.log(result)
+        arr.push.apply(arr,result);
+        if(tot==0){
+          arr = arr.filter( function( el ) {
+            return temp.indexOf( el ) < 0;
+          } );
+          arr = arr.filter(function(item, pos, self) {
+              return self.indexOf(item) == pos;
+          })
+          // arr.forEach(function(item){
+          //   item=mongoose.Types.ObjectId(item);
+          // })
+          console.log(arr);
+          Movie.find().where('_id').in(arr).exec((err, records) => {
+            if(err!=null){
+              return res.status(400).send('Unknown Error '+err);
+            }
+            return res.render('recommendedForYou.ejs', {f:1, movies:records})
+          });
+        }
+      })
+    })
+
+
+  })
+
+
+})
+
+app.get('/train', checkAuthenticated, async (req, res) => {
+
+  let user = await req.user;
+  await Admin.countDocuments({'name':user._id}, async function(err,coun){
+    if(err!=null){
+      return res.status(400).send('Unknown error');
+    }
+    console.log('lelel '+coun)
+    if(coun==1){
+
+      await MovieRule.remove({}, async function(){
+        await MovieLike.find({}).sort('user').exec(async function(err,docs){
+
+            if(docs.length==1){
+              return res.send('training complete')
+            }
+
+            l1 = [];
+            l2 = [];
+            l1.push(docs[0]);
+            for(var i=1;i<docs.length;i++){
+              if(docs[i].user == docs[i-1].user){
+                l1.push(docs[i]);
+              } else {
+                l2.push(l1);
+                l1=[docs[i]];
+              }
+            }
+
+            l3 = []
+            l1=[]
+            for(var i=0;i<l2.length;i++){
+              for(var j=0;j<l2[i].length;j++){
+                l1.push(l2[i][j].movie);
+              }
+              l3.push(l1.join('||'));
+              l1=[]
+            }
+
+            l3 = l3.join('//')
+
+            const { spawn } = require("child_process");
+            const pyProg = spawn('python', ['./temporary.py', l3]);
+
+            pyProg.stdout.on('data', function(data) {
+
+                var rules_string = ((data.toString()).substring(2))
+                rules_string = rules_string.substring(0,rules_string.length-3)
+                var rules = rules_string.split("), (");
+                detail_rules = [];
+                rules.forEach(function(rule){
+                  var temp=rule.split(", ");
+                  temp[0]=temp[0].substring(1, temp[0].length-1);
+                  temp[1]=temp[1].substring(1, temp[1].length-1);
+                  temp[2]=Number(temp[2]);
+                  temp[3]=Number(temp[3]);
+                  temp[4]=Number(temp[4]);
+                  detail_rules.push(temp);
+                })
+                console.log(detail_rules)
+                // rules_string = rules_string.replace(/\(|\)/gi, '');
+                detail_rules.sort(function(a,b){return a[4]-b[4]});
+                detail_rules.forEach(async function(rule){
+                  let mr = new MovieRule({
+                    movie1: rule[0],
+                    movie2: rule[1],
+                    support: rule[2],
+                    confidence: rule[3],
+                    lift: rule[4]
+                  })
+                  let smr = await mr.save();
+                })
+
+                res.write(rules_string);
+                res.end('end');
+              });
+          })
+        }
+      )
+    } else {
+      // let user = await req.user;
+
+      // return await res.redirect('/train')
+      // await Admin.deleteMany({})
+      return res.send('You are not authorised to perform this action')
+    }
+  })
 
 })
 
