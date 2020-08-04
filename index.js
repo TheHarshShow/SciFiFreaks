@@ -21,6 +21,7 @@ const MovieRule = require('./Models/MovieRule')
 const Admin = require('./Models/Admin')
 const method_override = require('method-override');
 const path = require('path');
+var bodyParser = require('body-parser')
 
 const authRoute = require('./Routes/auth')
 const initialisePassport = require('./passport-config')
@@ -50,6 +51,7 @@ initialisePassport(
   }
 )
 
+app.use(bodyParser.json())
 app.set('view-engine', 'ejs')
 app.use(method_override('_method'))
 app.use(express.urlencoded({ extended : false }))
@@ -307,6 +309,43 @@ app.get('/m/:movie_id', (req,res) => {
   })
 })
 
+app.get('/create_random_users', async (req, res) => {
+  var request = require('request');
+
+  const { spawn } = require('child_process')
+  const pyProg = spawn('python', ['./generateUsers.py'])
+  var dat=''
+
+  pyProg.stdout.on('data', async function(data){
+    dat+=data.toString();
+    if(dat[dat.length-2]=='$' && dat[dat.length-3]=='$'){
+      dat=dat.substring(0,dat.length-5)
+      res.redirect('/')
+      const users = (dat.toString()).split('||');
+      // console.log(users);
+      var t=users.length
+      User.deleteMany({}, function(){
+        users.forEach(function(user){
+          var use = user.split('|');
+          var myJSONObject = { email: use[1], name: use[0], password:use[2] } ;
+          console.log(myJSONObject);
+          request({
+            url: "http://localhost:8000/api/user/register",
+            method: "POST",
+            json: true,
+            body: myJSONObject
+          }, function (error, response, body) {
+              t--;
+              console.log(t)
+
+          });
+        })
+      })
+    }
+  })
+
+})
+
 app.get('/generate', async (req, res) => {
 
   var mov = [];
@@ -329,35 +368,164 @@ app.get('/generate', async (req, res) => {
       const { spawn } = require("child_process");
       const pyProg = spawn('python', ['./generate.py', s1]);
 
+      var dat = '';
+
       pyProg.stdout.on('data', async function(data) {
+          dat+=data.toString()
+          // console.log(dat.substr(-3))
+          // console.log(data.toString())
+          if(dat[dat.length-2]=='$' && dat[dat.length-3]=='$'){
+            console.log("hahaha")
+            res.write(dat.toString());
+            res.end('');
+            dat=dat.substring(0,dat.length-5)
+            // console.log(dat)
+            var clusters = (dat.toString().substring(0,dat.toString().length-1)).split('||');
+            var t=0;
+            for (var i=0;i<clusters.length; i++){
+              clusters[i]=clusters[i].split('|');
+              t+=clusters[i].length-1;
 
-          var clusters = (data.toString().substring(0,data.toString().length-1)).split('||');
-          var t=0;
-          for (var i=0;i<clusters.length; i++){
-            clusters[i]=clusters[i].split('|');
-            t+=clusters[i].length;
-          }
+            }
+            // console.log(clusters.length);
+            // console.log(t)
+            await MovieLike.deleteMany({}, async function(){
+              for(var j=0;j<clusters.length;j++){
+                var cluster=clusters[j];
+                for(var i=1;i<cluster.length;i++){
+                  let ml = new MovieLike({
+                    movie: cluster[i],
+                    user: cluster[0]
+                  })
+                  await ml.save().then(function(){
+                    t = t-1;
+                    console.log("SI "+t)
 
-          console.log(t)
-          await MovieLike.deleteMany({}, async function(){
-
-            clusters.forEach(async function(cluster){
-              for(var i=1;i<cluster.length;i++){
-                let ml = new MovieLike({
-                  movie: cluster[i],
-                  user: cluster[0]
-                })
-                await ml.save();
+                  });
+                }
               }
             })
-            res.write(data.toString());
-            res.end('');
-          })
+          }
         });
-
     })
   })
 
+})
+
+app.get('/train', async (req, res) => {
+
+  let user = await req.user;
+
+    await MovieRule.deleteMany({}, async function(){
+      await MovieLike.find({}).sort('user').exec(async function(err,docs){
+
+          if(docs.length==1){
+            return res.send('training complete')
+          }
+
+          l1 = [];
+          l2 = [];
+          l1.push(docs[0]);
+          for(var i=1;i<docs.length;i++){
+            if(docs[i].user == docs[i-1].user){
+              l1.push(docs[i]);
+            } else {
+              l2.push(l1);
+              l1=[docs[i]];
+            }
+          }
+
+          l3 = []
+          l1=[]
+          for(var i=0;i<l2.length;i++){
+            for(var j=0;j<l2[i].length;j++){
+              l1.push(l2[i][j].movie);
+            }
+            l3.push(l1.join('||'));
+            l1=[]
+          }
+
+          l3 = l3.join('//')
+          console.log(l3)
+          const { spawn } = require("child_process");
+          const pyProg = spawn('python', ['./temporary.py', l3]);
+
+          var dat=''
+
+          pyProg.stdout.on('data', function(data) {
+              dat+=data.toString();
+              console.log(data.toString())
+              if(dat[dat.length-2]==']'){
+                dat=dat.substring(0,dat.length-1)
+                var rules_string = (dat.substring(2))
+                res.write(rules_string);
+                res.end('end');
+                rules_string = rules_string.substring(0,rules_string.length-3)
+
+
+
+                var rules = rules_string.split("), (");
+
+                if(rules.length==1){ return }
+                detail_rules = [];
+                rules.forEach(function(rule){
+                  var temp=rule.split(", ");
+                  temp[0]=temp[0].substring(1, temp[0].length-1);
+                  temp[1]=temp[1].substring(1, temp[1].length-1);
+                  temp[2]=Number(temp[2]);
+                  temp[3]=Number(temp[3]);
+                  temp[4]=Number(temp[4]);
+                  detail_rules.push(temp);
+                })
+                console.log(detail_rules)
+                // rules_string = rules_string.replace(/\(|\)/gi, '');
+                detail_rules.sort(function(a,b){return a[4]-b[4]});
+                detail_rules.forEach(async function(rule){
+                  let mr = new MovieRule({
+                    movie1: rule[0],
+                    movie2: rule[1],
+                    support: rule[2],
+                    confidence: rule[3],
+                    lift: rule[4]
+                  })
+                  let smr = await mr.save();
+                })
+              }
+            });
+        })
+      }
+    )
+})
+
+app.get('/similar/:movie_id', async (req,res) => {
+
+  let f=0;
+  if(req.isAuthenticated()){ f=1; }
+
+  Movie.findOne({'_id':req.params.movie_id}, async (err,doc)=>{
+    if(err){
+      return res.status(400).send('There was an error')
+    }
+
+    MovieRule.find({movie1:req.params.movie_id}, (err,docs) => {
+      if(err){
+        return res.status(400).send('There was an error')
+      }
+      docs = docs.map(a => a.movie2)
+
+      console.log(docs)
+      var len=docs.length;
+
+      Movie.find({'_id':{$in:docs}}, (err,docxs) => {
+        if(err){
+          return res.status(400).send('There was an error')
+        }
+        return res.render('similarMovies.ejs', {f:f, movie:doc, movies:docxs})
+      })
+
+    })
+
+  })
 })
 
 app.post('/post_comment_on_movie_comment/:comment_id', checkAuthenticated, async (req, res) => {
@@ -491,6 +659,8 @@ app.get('/recommended', checkAuthenticated, async (req,res) => {
       return res.status(401).send('Unknown error');
     }
 
+    if(docs.length==0){ return res.render('recommendedForYou.ejs', {f:1, movies:[]}) }
+
     let temp = docs.map(a => a.movie);
 
     console.log(temp);
@@ -528,97 +698,6 @@ app.get('/recommended', checkAuthenticated, async (req,res) => {
 
 
 })
-
-app.get('/train', checkAuthenticated, async (req, res) => {
-
-  let user = await req.user;
-  await Admin.countDocuments({'name':user._id}, async function(err,coun){
-    if(err!=null){
-      return res.status(400).send('Unknown error');
-    }
-    console.log('lelel '+coun)
-    if(coun==1){
-
-      await MovieRule.remove({}, async function(){
-        await MovieLike.find({}).sort('user').exec(async function(err,docs){
-
-            if(docs.length==1){
-              return res.send('training complete')
-            }
-
-            l1 = [];
-            l2 = [];
-            l1.push(docs[0]);
-            for(var i=1;i<docs.length;i++){
-              if(docs[i].user == docs[i-1].user){
-                l1.push(docs[i]);
-              } else {
-                l2.push(l1);
-                l1=[docs[i]];
-              }
-            }
-
-            l3 = []
-            l1=[]
-            for(var i=0;i<l2.length;i++){
-              for(var j=0;j<l2[i].length;j++){
-                l1.push(l2[i][j].movie);
-              }
-              l3.push(l1.join('||'));
-              l1=[]
-            }
-
-            l3 = l3.join('//')
-
-            const { spawn } = require("child_process");
-            const pyProg = spawn('python', ['./temporary.py', l3]);
-
-            pyProg.stdout.on('data', function(data) {
-
-                var rules_string = ((data.toString()).substring(2))
-                rules_string = rules_string.substring(0,rules_string.length-3)
-                var rules = rules_string.split("), (");
-                detail_rules = [];
-                rules.forEach(function(rule){
-                  var temp=rule.split(", ");
-                  temp[0]=temp[0].substring(1, temp[0].length-1);
-                  temp[1]=temp[1].substring(1, temp[1].length-1);
-                  temp[2]=Number(temp[2]);
-                  temp[3]=Number(temp[3]);
-                  temp[4]=Number(temp[4]);
-                  detail_rules.push(temp);
-                })
-                console.log(detail_rules)
-                // rules_string = rules_string.replace(/\(|\)/gi, '');
-                detail_rules.sort(function(a,b){return a[4]-b[4]});
-                detail_rules.forEach(async function(rule){
-                  let mr = new MovieRule({
-                    movie1: rule[0],
-                    movie2: rule[1],
-                    support: rule[2],
-                    confidence: rule[3],
-                    lift: rule[4]
-                  })
-                  let smr = await mr.save();
-                })
-
-                res.write(rules_string);
-                res.end('end');
-              });
-          })
-        }
-      )
-    } else {
-      // let user = await req.user;
-
-      // return await res.redirect('/train')
-      // await Admin.deleteMany({})
-      return res.send('You are not authorised to perform this action')
-    }
-  })
-
-})
-
 app.post('/post_tv_show', checkAuthenticated, async (req, res) => {
 
   // console.log(req.body);

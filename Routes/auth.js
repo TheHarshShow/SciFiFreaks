@@ -5,15 +5,17 @@ const {registerValidation, loginValidation} = require('../validation')
 const passport = require('passport')
 const flash = require('express-flash')
 const session = require('express-session')
+const bodyParser = require('body-parser')
 
+router.use(bodyParser.urlencoded({ extended: false }))
 //Register
 router.post('/register', async (req, res) => {
   //VALIDATE
+  // console.log(req)
   console.log('Register')
   console.log('Register ' + req.body.name)
 
   const { error } = registerValidation(req.body);
-
 
   if(error != null){
     return res.send(error.details[0].message);

@@ -16,7 +16,7 @@ data = []
 for user in users:
     sett = [user]
     random.shuffle(movies);
-    k = random.randint(1,len(movies))
+    k = random.randint(1,6)
     sett.extend(movies[0:k])
     data.append(sett);
 
@@ -25,7 +25,7 @@ for d in data:
     s+='|'.join(d);
     s+='||';
 
-s = s[:-2]
+s+='$$'
 
 print(s);
 
