@@ -23,4 +23,4 @@ Here are a few photos of the website:
 
 <h3>Discussion Thread</h3>
 
-![alt text](https://i.imgur.com/TU4ezwk.png)
+![alt text](https://i.imgur.com/gk7twns.png)
